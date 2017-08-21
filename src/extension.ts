@@ -6,6 +6,7 @@ import {detect}  from 'async'
 import * as css from 'css'
 import * as less from 'less'
 import * as HTMLLanguageService from 'vscode-html-languageservice'
+import * as CSSLanguageSerivce from 'vscode-css-languageservice'
 //TODO: Add Sass support
 
 import { SourceMapConsumer } from 'source-map'
@@ -224,6 +225,13 @@ export class PeekCSSDefinitionProvider implements vscode.DefinitionProvider {
    * @memberOf PeekFileDefinitionProvider
    */
   async provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Definition> {
+
+    const langServ = CSSLanguageSerivce.getCSSLanguageService();
+
+    console.log("-- location --")
+    console.log("location: ", langServ.findDefinition(document, position, {}));
+
+
     const selector: {attribute: string, value: string} = PeekCSSDefinitionProvider.findSelector(document, position)
     if(!selector) {
       return null

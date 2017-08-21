@@ -3625,6 +3625,13 @@ vinyl@~2.0.1:
     remove-trailing-separator "^1.0.1"
     replace-ext "^1.0.0"
 
+vscode-css-languageservice@^2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/vscode-css-languageservice/-/vscode-css-languageservice-2.1.2.tgz#74a19959f9e6aafddaa94d7f9a53489177ae4b1b"
+  dependencies:
+    vscode-languageserver-types "^3.2.0"
+    vscode-nls "^2.0.1"
+
 vscode-html-languageservice@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/vscode-html-languageservice/-/vscode-html-languageservice-1.0.0.tgz#3ebc31c1153fdea4d7b2c15f44e2fb42bc253f82"
@@ -3637,9 +3644,17 @@ vscode-languageserver-types@^1.0.4-next.1:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-1.0.4.tgz#439a52f040c89cf6599d88ed9a1b5a9abdca11b7"
 
+vscode-languageserver-types@^3.2.0, vscode-languageserver-types@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-3.3.0.tgz#8964dc7c2247536fbefd2d6836bf3febac80dd00"
+
 vscode-nls@^1.0.4:
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/vscode-nls/-/vscode-nls-1.0.7.tgz#298c01fce87802c644c0a15ef526a33c62c0d58e"
+
+vscode-nls@^2.0.1:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/vscode-nls/-/vscode-nls-2.0.2.tgz#808522380844b8ad153499af5c3b03921aea02da"
 
 vscode-uri@^1.0.0:
   version "1.0.1"
