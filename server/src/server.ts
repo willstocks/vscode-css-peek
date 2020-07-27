@@ -1,6 +1,7 @@
 "use strict";
 
 import fs = require("fs");
+import * as path from "path";
 import {
   createConnection,
   TextDocuments,
@@ -39,14 +40,20 @@ let peekFromLanguages: string[];
 
 documents.onDidOpen((event) => {
   connection.console.log(
-    `[Server(${process.pid}) ${workspaceFolder}] Document opened: ${event.document.uri}`
+    `[Server(${process.pid}) ${path.basename(
+      workspaceFolder
+    )}/] Document opened: ${path.basename(event.document.uri)}`
   );
   if (isLanguageServiceSupported(event.document.languageId)) {
     const languageService = getLanguageService(event.document);
     const stylesheet = languageService.parseStylesheet(event.document);
+    const symbols = languageService.findDocumentSymbols(
+      event.document,
+      stylesheet
+    );
     styleSheets[event.document.uri] = {
       document: event.document,
-      stylesheet,
+      symbols,
     };
   }
 });
@@ -54,14 +61,20 @@ documents.listen(connection);
 
 documents.onDidChangeContent((event) => {
   connection.console.log(
-    `[Server(${process.pid}) ${workspaceFolder}] Document changed: ${event.document.uri}`
+    `[Server(${process.pid}) ${path.basename(
+      workspaceFolder
+    )}/] Document changed: ${path.basename(event.document.uri)}`
   );
   if (isLanguageServiceSupported(event.document.languageId)) {
     const languageService = getLanguageService(event.document);
     const stylesheet = languageService.parseStylesheet(event.document);
+    const symbols = languageService.findDocumentSymbols(
+      event.document,
+      stylesheet
+    );
     styleSheets[event.document.uri] = {
       document: event.document,
-      stylesheet,
+      symbols,
     };
   }
 });
@@ -71,11 +84,13 @@ connection.onInitialize((params) => {
   workspaceFolder = params.rootUri;
   peekFromLanguages = params.initializationOptions.peekFromLanguages;
   connection.console.log(
-    `[Server(${process.pid}) ${workspaceFolder}] Started and initialize received`
+    `[Server(${process.pid}) ${path.basename(workspaceFolder)}/] onInitialize`
   );
   setupInitialStyleMap(params);
   connection.console.log(
-    `[Server(${process.pid}) ${workspaceFolder}] Setup the stylesheet lookup map`
+    `[Server(${process.pid}) ${path.basename(
+      workspaceFolder
+    )}/] setupInitialStylemap`
   );
 
   return {
@@ -99,9 +114,10 @@ function setupInitialStyleMap(params: InitializeParams) {
     const document = TextDocument.create(fileUri.uri, languageId, 1, text);
     const languageService = getLanguageService(document);
     const stylesheet = languageService.parseStylesheet(document);
+    const symbols = languageService.findDocumentSymbols(document, stylesheet);
     styleSheets[fileUri.uri] = {
       document,
-      stylesheet,
+      symbols,
     };
   });
 }
@@ -114,7 +130,7 @@ connection.onDefinition(
     const document = documents.get(documentIdentifier.uri);
 
     // Ignore defintiion requests from unsupported languages
-    if (peekFromLanguages.indexOf(document.languageId) === -1) {
+    if (!peekFromLanguages.includes(document.languageId)) {
       return null;
     }
 

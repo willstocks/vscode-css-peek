@@ -91,6 +91,7 @@
   "scripts": {
     "vscode:prepublish": "yarn run compile",
     "compile": "tsc -b",
+    "prettier": "prettier './{server,client,tests}/**/*' -c",
     "lint": "yarn run eslint . --ext ts",
     "watch": "tsc -b -w",
     "test": "nyc node tests/out/runTest.js",
@@ -106,6 +107,7 @@
     "eslint": "^7.5.0",
     "mocha": "^8.0.1",
     "nyc": "^15.1.0",
+    "prettier": "^2.0.5",
     "typescript": "^3.9.7"
   }
 }

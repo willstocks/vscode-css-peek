@@ -1,12 +1,12 @@
-import { Stylesheet } from 'vscode-css-languageservice';
-import { TextDocument } from 'vscode-languageserver/lib/main';
+import { SymbolInformation } from "vscode-css-languageservice";
+import { TextDocument } from "vscode-languageserver/lib/main";
 
 export type StylesheetMap = {
-  [key: string]: {
-    document: TextDocument,
-    stylesheet: Stylesheet
-  }
-}
+  [uri: string]: {
+    document: TextDocument;
+    symbols: SymbolInformation[];
+  };
+};
 
 // Based off the `vscode` `Uri` namespace
 export type Uri = {
@@ -23,6 +23,6 @@ export type Uri = {
    * invalid characters and semantics. Will *not* look at the scheme of this Uri.
    */
   readonly fsPath: string;
-}
+};
 
-export type Selector = { attribute: string, value: string }
+export type Selector = { attribute: string; value: string };

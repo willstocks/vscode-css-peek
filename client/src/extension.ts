@@ -78,13 +78,30 @@ export function activate(context: ExtensionContext): void {
     // TODO: Return if unsupported document.languageId
     if (
       !["file", "untitled"].includes(document.uri.scheme) ||
-      !(
-        peekFromLanguages.includes(document.languageId) ||
-        SUPPORTED_EXTENSION_REGEX.test(document.fileName)
-      )
+      (!peekFromLanguages.includes(document.languageId) &&
+        !SUPPORTED_EXTENSION_REGEX.test(document.fileName))
     ) {
       return;
     }
+
+    const documentSelector = [
+      ...SUPPORTED_EXTENSIONS.map((language) => ({
+        scheme: "file",
+        language,
+      })),
+      ...SUPPORTED_EXTENSIONS.map((language) => ({
+        scheme: "untitled",
+        language,
+      })),
+      ...peekFromLanguages.map((language) => ({
+        scheme: "file",
+        language,
+      })),
+      ...peekFromLanguages.map((language) => ({
+        scheme: "untitled",
+        language,
+      })),
+    ];
 
     const uri = document.uri;
     // Untitled files go to a default client.
@@ -95,10 +112,7 @@ export function activate(context: ExtensionContext): void {
         debug: { module, transport: TransportKind.ipc, options: debugOptions },
       };
       const clientOptions: LanguageClientOptions = {
-        documentSelector: peekFromLanguages.map((language) => ({
-          scheme: "untitled",
-          language,
-        })),
+        documentSelector,
         synchronize: {
           configurationSection: "css_peek",
         },
@@ -149,11 +163,7 @@ export function activate(context: ExtensionContext): void {
           },
         };
         const clientOptions: LanguageClientOptions = {
-          documentSelector: peekFromLanguages.map((language) => ({
-            scheme: "file",
-            language,
-            pattern: `${folder.uri.fsPath}/**/*`,
-          })),
+          documentSelector,
           diagnosticCollectionName: "css-peek",
           synchronize: {
             configurationSection: "css_peek",
