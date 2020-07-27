@@ -22,6 +22,12 @@ In addition, it supports the Symbol Provider so you can quickly jump to the righ
 
 ![Symbol Provider](https://github.com/pranaygp/vscode-css-peek/raw/master/readme/symbolProvider.gif)
 
+## Configuration
+
+* `cssPeek.supportTags` - Enable Peeking from HTML tags in addition to classnames and IDs. React components are ignored, but it's a good idea to disable this feature when using Angular.
+* `cssPeek.peekFromLanguages` - A list of vscode language names where the extension should be used.
+* `cssPeek.peekToExclude` - A list of file globs that filters out style files to not look for. By default, `node_modules` and `bower_components`
+
 See editor docs for more details
 
 - [Visual Studio Code: Goto Definition](https://code.visualstudio.com/docs/editor/editingevolved#_go-to-definition)
