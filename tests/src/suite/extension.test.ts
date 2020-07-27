@@ -11,11 +11,11 @@ suite("Extension Tests", () => {
   let document2: ServerTextDocument;
 
   before((done) => {
-		console.log("before");
-		// @ts-ignore 
+    console.log("before");
+    // @ts-ignore
     create(console);
     vscode.workspace
-      .openTextDocument(`${vscode.workspace.rootPath}/example.html`)
+      .openTextDocument(`${vscode.workspace.workspaceFolders[0]}/example.html`)
       .then(
         (doc) => {
           document = doc;
