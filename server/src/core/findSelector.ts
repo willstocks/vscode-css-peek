@@ -33,6 +33,7 @@ export default function findSelector(
     text.charAt(start - 1) !== "'" &&
     text.charAt(start - 1) !== '"' &&
     text.charAt(start - 1) !== "\n" &&
+    text.charAt(start - 1) !== "/" &&
     text.charAt(start - 1) !== "<"
   )
     start -= 1;
@@ -52,18 +53,35 @@ export default function findSelector(
   const htmlScanner: Scanner = getHTMLLanguageService().createScanner(text);
   let attribute: string = null;
 
+  console.log(`${selectorWord} ${start}`);
   let tokenType = htmlScanner.scan();
   while (tokenType !== TokenType.EOS) {
     switch (tokenType) {
       case TokenType.StartTag:
+      case TokenType.EndTag:
         attribute = null;
 
         // FOR DEBUGGING
-        // console.log(
-        //   `${htmlScanner.getTokenText()} ${htmlScanner.getTokenOffset()} ${htmlScanner.getTokenEnd()}`
-        // );
+        console.log(
+          `  ${htmlScanner.getTokenText()} ${htmlScanner.getTokenOffset()} ${htmlScanner.getTokenEnd()}`
+        );
+        const tokenOffset = htmlScanner.getTokenOffset();
 
-        if (start === htmlScanner.getTokenOffset())
+        if (
+          [
+            "javascript",
+            "typescript",
+            "javascriptreact",
+            "typescriptreact",
+          ].includes(document.languageId)
+        ) {
+          if (selectorWord[0].toUpperCase() === selectorWord[0]) {
+            // if the first letter is uppercase, this is a JSX component
+            break;
+          }
+        }
+
+        if (start === tokenOffset)
           selector = { attribute: null, value: selectorWord };
         break;
       case TokenType.AttributeName:

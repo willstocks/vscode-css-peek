@@ -50,13 +50,26 @@
           "type": "array",
           "default": [
             "html",
-            "ejs",
-            "erb",
+            "django-html",
+            "laravel-blade",
+            "razor",
+            "vue",
+            "blade",
+            "pug",
+            "jade",
+            "handlebars",
             "php",
+            "twig",
+            "md",
+            "nunjucks",
+            "javascript",
             "javascriptreact",
-            "typescriptreact",
+            "erb",
             "typescript",
-            "javascript"
+            "typescriptreact",
+            "HTML (Eex)",
+            "html-eex",
+            "ejs"
           ],
           "items": {
             "type": "string"
