@@ -2,6 +2,12 @@
   background-color: blue;
 }
 
+.test {
+  &-2 {
+    color: red;
+  }
+}
+
 .container {
   #test-2[foo="bar"] {
     color: #f00;

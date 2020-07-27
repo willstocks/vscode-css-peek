@@ -63,7 +63,7 @@ export function activate(context: ExtensionContext): void {
   const module = context.asAbsolutePath(
     path.join("server", "out", "server.js")
   );
-  const outputChannel: OutputChannel = Window.createOutputChannel("css-peek");
+  const outputChannel: OutputChannel = Window.createOutputChannel("CSS Peek");
 
   const config: WorkspaceConfiguration = Workspace.getConfiguration("css_peek");
   const peekFromLanguages: Array<string> = config.get(

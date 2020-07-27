@@ -47,6 +47,14 @@ function getSelection(selector: Selector): string {
   }
 }
 
+function resolveSymbolName(symbols: SymbolInformation[], i: number): string {
+  const name = symbols[i].name;
+  if (name.startsWith("&")) {
+    return resolveSymbolName(symbols, i - 1) + name.slice(1);
+  }
+  return name;
+}
+
 export function findSymbols(
   selector: Selector,
   stylesheetMap: StylesheetMap
@@ -75,23 +83,22 @@ export function findSymbols(
     try {
       console.log(`${path.basename(uri)} has ${symbols.length} symbols`);
 
-      symbols.forEach((symbol) => {
+      symbols.forEach((symbol, i) => {
+        let name = resolveSymbolName(symbols, i);
+
         console.log(
           `  ${symbol.location.range.start.line}:${
             symbol.location.range.start.character
           } ${symbol.deprecated ? "[deprecated] " : " "}${
             symbol.containerName ? `[container:${symbol.containerName}] ` : " "
-          } [${symbol.kind}] ${symbol.name}`
+          } [${symbol.kind}] ${name}`
         );
 
-        if (symbol.name.indexOf("&") !== -1) {
-          // TODO: Handle nesting
-        }
-        if (symbol.name.search(re) !== -1) {
+        if (name.search(re) !== -1) {
           foundSymbols.push(symbol);
         } else if (!classOrIdSelector) {
           // Special case for tag selectors - match "*" as the rightmost character
-          if (/\*\s*$/.test(symbol.name)) {
+          if (/\*\s*$/.test(name)) {
             foundSymbols.push(symbol);
           }
         }
