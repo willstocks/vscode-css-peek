@@ -2,19 +2,25 @@
 .nyc_output/**
 **/*.ts
 **/*.map
-.gitignore
+
+**/.gitignore
 **/tsconfig.json
 **/tsconfig.base.json
-**/tsconfig.tsbuildinfo
-contributing.md
-.travis.yml
+
+**/*.tsbuildinfo
+**/yarn.lock
+**/contributing.md
+**/.travis.yml
+**/.eslintignore
+**/.eslintrc.js
+**/.eslintrc.json
+
+
+readme/**
+node_modules/**
+tests/**
 
 **/node_modules/@types/**
 **/node_modules/**/README.md
-./node_modules
 
-./readme/**
-./tests/**
-**/yarn.lock
-.eslintignore
-.eslintrc.js
+publish.sh
