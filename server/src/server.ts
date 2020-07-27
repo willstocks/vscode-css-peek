@@ -1,132 +1,148 @@
-'use strict';
+"use strict";
 
-import fs = require('fs');
+import fs = require("fs");
 import {
-  createConnection, TextDocuments, ProposedFeatures, TextDocumentSyncKind, TextDocumentPositionParams, Definition, InitializeParams, TextDocument
-} from 'vscode-languageserver';
-import { Uri, StylesheetMap, Selector } from './types'
+  createConnection,
+  TextDocuments,
+  ProposedFeatures,
+  TextDocumentSyncKind,
+  TextDocumentPositionParams,
+  Definition,
+  InitializeParams,
+  TextDocument,
+} from "vscode-languageserver";
+import { Uri, StylesheetMap, Selector } from "./types";
 
-import findSelector from './core/findSelector'
-import { findSymbols, findDefinition, getLanguageService, isLanguageServiceSupported } from './core/findDefinition'
-import { create } from './logger'
+import findSelector from "./core/findSelector";
+import {
+  findSymbols,
+  findDefinition,
+  getLanguageService,
+  isLanguageServiceSupported,
+} from "./core/findDefinition";
+import { create } from "./logger";
 
 // Creates the LSP connection
-let connection = createConnection(ProposedFeatures.all);
+const connection = createConnection(ProposedFeatures.all);
 
 // Create a manager for open text documents
-let documents = new TextDocuments();
+const documents = new TextDocuments();
 
 // Create a map of styleSheet URIs to the stylesheet text content
-let styleSheets: StylesheetMap = {};
+const styleSheets: StylesheetMap = {};
 
 // The workspace folder this server is operating on
-let workspaceFolder: string;
+let workspaceFolder: string | null;
 
 // A list of languages that suport the lookup definition (by default, only html)
 let peekFromLanguages: string[];
 
 documents.onDidOpen((event) => {
-  connection.console.log(`[Server(${process.pid}) ${workspaceFolder}] Document opened: ${event.document.uri}`);
+  connection.console.log(
+    `[Server(${process.pid}) ${workspaceFolder}] Document opened: ${event.document.uri}`
+  );
   if (isLanguageServiceSupported(event.document.languageId)) {
-    const uri = event.document.uri;
-    const languageId = event.document.languageId;
-    const text = event.document.getText();
-    const document = TextDocument.create(uri, languageId, 1, text);
-    const languageService = getLanguageService(document);
-    const stylesheet = languageService.parseStylesheet(document);
+    const languageService = getLanguageService(event.document);
+    const stylesheet = languageService.parseStylesheet(event.document);
     styleSheets[event.document.uri] = {
-      document,
-      stylesheet
-    }
+      document: event.document,
+      stylesheet,
+    };
   }
-})
+});
 documents.listen(connection);
 
 documents.onDidChangeContent((event) => {
-  connection.console.log(`[Server(${process.pid}) ${workspaceFolder}] Document changed: ${event.document.uri}`);
+  connection.console.log(
+    `[Server(${process.pid}) ${workspaceFolder}] Document changed: ${event.document.uri}`
+  );
   if (isLanguageServiceSupported(event.document.languageId)) {
-    const uri = event.document.uri;
-    const languageId = event.document.languageId;
-    const text = event.document.getText();
-    const document = TextDocument.create(uri, languageId, 1, text);
-    const languageService = getLanguageService(document);
-    const stylesheet = languageService.parseStylesheet(document);
+    const languageService = getLanguageService(event.document);
+    const stylesheet = languageService.parseStylesheet(event.document);
     styleSheets[event.document.uri] = {
-      document,
-      stylesheet
+      document: event.document,
+      stylesheet,
     };
   }
-})
+});
 
 connection.onInitialize((params) => {
   create(connection.console);
   workspaceFolder = params.rootUri;
   peekFromLanguages = params.initializationOptions.peekFromLanguages;
-	connection.console.log(`[Server(${process.pid}) ${workspaceFolder}] Started and initialize received`);
-  setupStyleMap(params);
-	connection.console.log(`[Server(${process.pid}) ${workspaceFolder}] Setup a stylesheet lookup map`);
+  connection.console.log(
+    `[Server(${process.pid}) ${workspaceFolder}] Started and initialize received`
+  );
+  setupInitialStyleMap(params);
+  connection.console.log(
+    `[Server(${process.pid}) ${workspaceFolder}] Setup the stylesheet lookup map`
+  );
 
-	return {
-		capabilities: {
-			textDocumentSync: {
-				openClose: true,
-				change: TextDocumentSyncKind.Full
-			},
+  return {
+    capabilities: {
+      textDocumentSync: {
+        openClose: true,
+        change: TextDocumentSyncKind.Full,
+      },
       definitionProvider: true,
-      workspaceSymbolProvider: true
-		}
-	}
+      workspaceSymbolProvider: true,
+    },
+  };
 });
 
-function setupStyleMap(params: InitializeParams) {
+function setupInitialStyleMap(params: InitializeParams) {
   const styleFiles = params.initializationOptions.stylesheets;
 
   styleFiles.forEach((fileUri: Uri) => {
-    const languageId = fileUri.fsPath.split('.').slice(-1)[0];
-    const text = fs.readFileSync(fileUri.fsPath, 'utf8');
+    const languageId = fileUri.fsPath.split(".").slice(-1)[0];
+    const text = fs.readFileSync(fileUri.fsPath, "utf8");
     const document = TextDocument.create(fileUri.uri, languageId, 1, text);
     const languageService = getLanguageService(document);
     const stylesheet = languageService.parseStylesheet(document);
     styleSheets[fileUri.uri] = {
       document,
-      stylesheet
+      stylesheet,
     };
   });
 }
 
-connection.onDefinition((textDocumentPositon: TextDocumentPositionParams): Definition => {
-	const documentIdentifier = textDocumentPositon.textDocument;
-	const position = textDocumentPositon.position;	
+connection.onDefinition(
+  (textDocumentPositon: TextDocumentPositionParams): Definition => {
+    const documentIdentifier = textDocumentPositon.textDocument;
+    const position = textDocumentPositon.position;
 
-  const document = documents.get(documentIdentifier.uri);
+    const document = documents.get(documentIdentifier.uri);
 
-  // Ignore defintiion requests from unsupported languages
-  if(peekFromLanguages.indexOf(document.languageId) === -1){
-    return null;
+    // Ignore defintiion requests from unsupported languages
+    if (peekFromLanguages.indexOf(document.languageId) === -1) {
+      return null;
+    }
+
+    const selector: Selector = findSelector(document, position);
+    if (!selector) {
+      return null;
+    }
+
+    return findDefinition(selector, styleSheets);
   }
+);
 
-  const selector: Selector = findSelector(document, position);
-	if(!selector) {
-		return null;
-  }
-
-  return findDefinition(selector, styleSheets);
-})
-
-connection.onWorkspaceSymbol(({query}) => {
+connection.onWorkspaceSymbol(({ query }) => {
   const selectors: Selector[] = [
     {
-      attribute: 'class',
-      value: query
+      attribute: "class",
+      value: query,
     },
     {
-      attribute: 'id',
-      value: query
+      attribute: "id",
+      value: query,
     },
   ];
 
-  return selectors
-    .reduce((p, selector) => [...p, ...findSymbols(selector, styleSheets)], []);  
-})
+  return selectors.reduce(
+    (p, selector) => [...p, ...findSymbols(selector, styleSheets)],
+    []
+  );
+});
 
 connection.listen();
