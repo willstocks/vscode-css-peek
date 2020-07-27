@@ -65,7 +65,7 @@ export function activate(context: ExtensionContext): void {
   );
   const outputChannel: OutputChannel = Window.createOutputChannel("CSS Peek");
 
-  const config: WorkspaceConfiguration = Workspace.getConfiguration("css_peek");
+  const config: WorkspaceConfiguration = Workspace.getConfiguration("cssPeek");
   const peekFromLanguages: Array<string> = config.get(
     "peekFromLanguages"
   ) as Array<string>;
@@ -114,7 +114,7 @@ export function activate(context: ExtensionContext): void {
       const clientOptions: LanguageClientOptions = {
         documentSelector,
         synchronize: {
-          configurationSection: "css_peek",
+          configurationSection: "cssPeek",
         },
         initializationOptions: {
           stylesheets: [],
@@ -166,7 +166,7 @@ export function activate(context: ExtensionContext): void {
           documentSelector,
           diagnosticCollectionName: "css-peek",
           synchronize: {
-            configurationSection: "css_peek",
+            configurationSection: "cssPeek",
           },
           initializationOptions: {
             stylesheets: potentialFiles.map((u) => ({

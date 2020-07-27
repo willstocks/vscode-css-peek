@@ -18,7 +18,8 @@ import { console } from "./../logger";
  */
 export default function findSelector(
   document: TextDocument,
-  position: Position
+  position: Position,
+  settings: { supportTags: boolean }
 ): { attribute: string; value: string } {
   const text = document.getText();
   const offset = document.offsetAt(position);
@@ -60,6 +61,10 @@ export default function findSelector(
       case TokenType.StartTag:
       case TokenType.EndTag:
         attribute = null;
+
+        if (!settings.supportTags) {
+          break;
+        }
 
         // FOR DEBUGGING
         console.log(

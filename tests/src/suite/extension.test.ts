@@ -38,6 +38,7 @@ suite("Extension Tests", () => {
     const classTestPos: vscode.Position = new vscode.Position(3, 17);
     const idTestIDPos: vscode.Position = new vscode.Position(3, 35);
     const idTest2Pos: vscode.Position = new vscode.Position(6, 19);
+    const h1Pos: vscode.Position = new vscode.Position(3, 6);
     // const idCommonPos: vscode.Position = new vscode.Position(4, 43);
 
     // const invalidPos: vscode.Position = new vscode.Position(1000, 19);
@@ -46,44 +47,63 @@ suite("Extension Tests", () => {
 
     test("can find the right id selector in a simple 'testID' case", () => {
       assert.ok(document);
-      const selector: { attribute: string; value: string } = findSelector(
-        document2,
-        idTestIDPos
-      );
+      const selector: {
+        attribute: string;
+        value: string;
+      } = findSelector(document2, idTestIDPos, { supportTags: true });
       assert.equal(selector.attribute, "id");
       assert.equal(selector.value, "testID");
     });
 
     test("can find the right class selector in a simple 'test' case", () => {
       assert.ok(document);
-      const selector: { attribute: string; value: string } = findSelector(
-        document2,
-        classTestPos
-      );
+      const selector: {
+        attribute: string;
+        value: string;
+      } = findSelector(document2, classTestPos, { supportTags: true });
       assert.equal(selector.attribute, "class");
       assert.equal(selector.value, "test");
     });
 
     test("can find the right id selector after an HTML comment", () => {
       assert.ok(document);
-      const selector: { attribute: string; value: string } = findSelector(
-        document2,
-        idTest2Pos
-      );
+      const selector: {
+        attribute: string;
+        value: string;
+      } = findSelector(document2, idTest2Pos, { supportTags: true });
       assert.equal(selector.attribute, "id");
       assert.equal(selector.value, "test-2");
     });
 
-    //TODO: Add test case for HTML tags
+    test("can find an HTML tag", () => {
+      assert.ok(document);
+      const selector: {
+        attribute: string;
+        value: string;
+      } = findSelector(document2, h1Pos, { supportTags: true });
+      assert.equal(selector.attribute, null);
+      assert.equal(selector.value, "h1");
+    });
+
+    test("disabling `supportTags` configuration setting works correctly", () => {
+      assert.ok(document);
+      const selector: {
+        attribute: string;
+        value: string;
+      } = findSelector(document2, h1Pos, { supportTags: false });
+      assert.equal(selector, null);
+    });
 
     test("throws an error for an invalid position", () => {
       assert.ok(document);
-      let selector: { attribute: string; value: string } = findSelector(
-        document2,
-        notAnAttributePos
-      );
+      let selector: {
+        attribute: string;
+        value: string;
+      } = findSelector(document2, notAnAttributePos, { supportTags: true });
       assert.equal(selector, null);
-      selector = findSelector(document2, notAnAttributePos2);
+      selector = findSelector(document2, notAnAttributePos2, {
+        supportTags: true,
+      });
       assert.equal(selector, null);
     });
   });

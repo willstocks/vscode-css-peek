@@ -38,15 +38,22 @@
   "contributes": {
     "configuration": {
       "type": "object",
-      "title": "CSS Peek extension configuration",
+      "title": "CSS Peek",
       "properties": {
-        "css_peek.enable": {
-          "scope": "resource",
+        "cssPeek.enable": {
+          "scope": "window",
           "type": "boolean",
           "default": true,
           "description": "Controls the enablement."
         },
-        "css_peek.peekFromLanguages": {
+        "cssPeek.supportTags": {
+          "scope": "window",
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Peeking from HTML tags in addition to classnames and IDs. React components are ignored, but it's a good idea to disable this feature when using Angular"
+        },
+        "cssPeek.peekFromLanguages": {
+          "scope": "window",
           "type": "array",
           "default": [
             "html",
@@ -76,7 +83,8 @@
           },
           "description": "A list of vscode language names where the extension should be used."
         },
-        "css_peek.peekToExclude": {
+        "cssPeek.peekToExclude": {
+          "scope": "window",
           "type": "array",
           "default": [
             "**/node_modules/**",
@@ -87,7 +95,7 @@
           },
           "description": "A list of file globs that filters out peekable files"
         },
-        "css_peek.trace.server": {
+        "cssPeek.trace.server": {
           "scope": "window",
           "type": "string",
           "enum": [

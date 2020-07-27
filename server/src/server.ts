@@ -1,6 +1,7 @@
 "use strict";
 
 import fs = require("fs");
+import * as minimatch from "minimatch";
 import * as path from "path";
 import {
   createConnection,
@@ -11,6 +12,7 @@ import {
   Definition,
   InitializeParams,
   TextDocument,
+  DidChangeConfigurationNotification,
 } from "vscode-languageserver";
 import { Uri, StylesheetMap, Selector } from "./types";
 
@@ -35,10 +37,27 @@ const styleSheets: StylesheetMap = {};
 // The workspace folder this server is operating on
 let workspaceFolder: string | null;
 
-// A list of languages that suport the lookup definition (by default, only html)
-let peekFromLanguages: string[];
+let hasConfigurationCapability: boolean = false;
+let hasWorkspaceFolderCapability: boolean = false;
 
-documents.onDidOpen((event) => {
+async function documentShouldBeIgnored(document: TextDocument) {
+  const settings = await getDocumentSettings(document.uri);
+  if (
+    !settings.peekFromLanguages.includes(document.languageId) ||
+    settings.peekToExclude.find((glob) => minimatch(document.uri, glob))
+  ) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/* Handle Document Updates */
+documents.onDidOpen(async (event) => {
+  if (await documentShouldBeIgnored(event.document)) {
+    return;
+  }
+
   connection.console.log(
     `[Server(${process.pid}) ${path.basename(
       workspaceFolder
@@ -57,9 +76,11 @@ documents.onDidOpen((event) => {
     };
   }
 });
-documents.listen(connection);
+documents.onDidChangeContent(async (event) => {
+  if (await documentShouldBeIgnored(event.document)) {
+    return;
+  }
 
-documents.onDidChangeContent((event) => {
   connection.console.log(
     `[Server(${process.pid}) ${path.basename(
       workspaceFolder
@@ -78,11 +99,21 @@ documents.onDidChangeContent((event) => {
     };
   }
 });
+documents.listen(connection);
 
+/* Server Initialization */
 connection.onInitialize((params) => {
   create(connection.console);
+  const capabilities = params.capabilities;
+
   workspaceFolder = params.rootUri;
-  peekFromLanguages = params.initializationOptions.peekFromLanguages;
+  // Does the client support the `workspace/configuration` request?
+  // If not, we will fall back using global settings
+  hasConfigurationCapability =
+    capabilities.workspace && !!capabilities.workspace.configuration;
+  hasWorkspaceFolderCapability =
+    capabilities.workspace && !!capabilities.workspace.workspaceFolders;
+
   connection.console.log(
     `[Server(${process.pid}) ${path.basename(workspaceFolder)}/] onInitialize`
   );
@@ -105,6 +136,66 @@ connection.onInitialize((params) => {
   };
 });
 
+/* Sync Configuration Settings */
+interface Settings {
+  supportTags: boolean;
+  peekFromLanguages: string[];
+  peekToExclude: string[];
+}
+connection.onInitialized(() => {
+  if (hasConfigurationCapability) {
+    // Register for all configuration changes.
+    connection.client.register(
+      DidChangeConfigurationNotification.type,
+      undefined
+    );
+  }
+  if (hasWorkspaceFolderCapability) {
+    connection.workspace.onDidChangeWorkspaceFolders((_event) => {
+      connection.console.log("Workspace folder change event received.");
+    });
+  }
+});
+// The global settings, used when the `workspace/configuration` request is not supported by the client.
+const defaultSettings: Settings = {
+  supportTags: true,
+  peekFromLanguages: ["html"],
+  peekToExclude: ["**/node_modules/**", "**/bower_components/**"],
+};
+let globalSettings: Settings = defaultSettings;
+
+// Cache the settings of all open documents
+let documentSettings: Map<string, Thenable<Settings>> = new Map();
+
+connection.onDidChangeConfiguration((change) => {
+  if (hasConfigurationCapability) {
+    // Reset all cached document settings
+    documentSettings.clear();
+  } else {
+    globalSettings = <Settings>(change.settings.cssPeek || defaultSettings);
+  }
+});
+
+function getDocumentSettings(resource: string): Thenable<Settings> {
+  if (!hasConfigurationCapability) {
+    return Promise.resolve(globalSettings);
+  }
+  let result = documentSettings.get(resource);
+  if (!result) {
+    result = connection.workspace.getConfiguration({
+      scopeUri: resource,
+      section: "cssPeek",
+    });
+    documentSettings.set(resource, result);
+  }
+  return result;
+}
+
+// Only keep settings for open documents
+documents.onDidClose((e) => {
+  documentSettings.delete(e.document.uri);
+});
+
 function setupInitialStyleMap(params: InitializeParams) {
   const styleFiles = params.initializationOptions.stylesheets;
 
@@ -123,18 +214,20 @@ function setupInitialStyleMap(params: InitializeParams) {
 }
 
 connection.onDefinition(
-  (textDocumentPositon: TextDocumentPositionParams): Definition => {
+  async (
+    textDocumentPositon: TextDocumentPositionParams
+  ): Promise<Definition> => {
     const documentIdentifier = textDocumentPositon.textDocument;
     const position = textDocumentPositon.position;
 
     const document = documents.get(documentIdentifier.uri);
 
-    // Ignore defintiion requests from unsupported languages
-    if (!peekFromLanguages.includes(document.languageId)) {
+    if (await documentShouldBeIgnored(document)) {
       return null;
     }
+    const settings = await getDocumentSettings(document.uri);
 
-    const selector: Selector = findSelector(document, position);
+    const selector: Selector = findSelector(document, position, settings);
     if (!selector) {
       return null;
     }
