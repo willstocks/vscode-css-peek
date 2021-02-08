@@ -33,7 +33,10 @@
   },
   "homepage": "https://github.com/pranaygp/vscode-css-peek/blob/master/README.md",
   "activationEvents": [
-    "*"
+    "workspaceContains:**/*.css",
+    "workspaceContains:**/*.scss",
+    "workspaceContains:**/*.sass",
+    "workspaceContains:**/*.less"
   ],
   "contributes": {
     "configuration": {
